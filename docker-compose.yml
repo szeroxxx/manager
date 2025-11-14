@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: company_management
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD: vps-secure-db-password-2025-company-manager
     ports:
       - "5432:5432"
     volumes:
@@ -31,9 +31,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/company_management?schema=public
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production-min-32-chars
-      JWT_REFRESH_SECRET: your-super-secret-refresh-jwt-key-change-this-in-production-min-32-chars
+      DATABASE_URL: postgresql://postgres:vps-secure-db-password-2025-company-manager@postgres:5432/company_management?schema=public
+      JWT_SECRET: vps-production-jwt-secret-key-2025-secure-random-32-chars-min
+      JWT_REFRESH_SECRET: vps-production-refresh-jwt-secret-key-2025-secure-random-32-chars
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       CORS_ORIGIN: http://72.61.173.90:4200

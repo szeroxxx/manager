@@ -7,13 +7,13 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --verbose
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with error handling
+RUN npm run build || (echo "Build failed - checking logs" && cat .next/trace && exit 1)
 
 # Production image, copy all the files and run next
 FROM node:18-alpine AS runner
