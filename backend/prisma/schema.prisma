@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  MEMBER
+  CLIENT
+}
+
+enum ClientStatus {
+  PROSPECT
+  ACTIVE
+  INACTIVE
+  CHURNED
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// Models
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole       @default(MEMBER)
+  departmentId  String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  createdProjects Project[] @relation("ProjectCreator")
+  assignedTasks Task[]      @relation("TaskAssignee")
+  managedDepartments Department[] @relation("DepartmentManager")
+  
+  @@map("users")
+}
+
+model Client {
+  id            String         @id @default(uuid())
+  companyName   String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  status        ClientStatus   @default(PROSPECT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  projects      Project[]
+  invoices      Invoice[]
+  
+  @@map("clients")
+}
+
+model Project {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  clientId      String
+  status        ProjectStatus @default(PLANNING)
+  priority      PriorityLevel @default(MEDIUM)
+  startDate     DateTime?
+  endDate       DateTime?
+  budget        Decimal?
+  createdBy     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  creator       User           @relation("ProjectCreator", fields: [createdBy], references: [id])
+  tasks         Task[]
+  invoices      Invoice[]
+  
+  @@map("projects")
+}
+
+model Task {
+  id            String         @id @default(uuid())
+  title         String
+  description   String?
+  projectId     String
+  assignedTo    String?
+  status        TaskStatus     @default(TODO)
+  priority      PriorityLevel  @default(MEDIUM)
+  dueDate       DateTime?
+  progress      Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee      User?          @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  
+  @@map("tasks")
+}
+
+model Invoice {
+  id            String         @id @default(uuid())
+  invoiceNumber String         @unique
+  clientId      String
+  projectId     String?
+  amount        Decimal
+  taxAmount     Decimal        @default(0)
+  totalAmount   Decimal
+  status        InvoiceStatus  @default(DRAFT)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  
+  @@map("invoices")
+}
+
+model Department {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  managerId     String?
+  createdAt     DateTime       @default(now())
+  
+  manager       User?          @relation("DepartmentManager", fields: [managerId], references: [id])
+  members       User[]
+  
+  @@map("departments")
+}
