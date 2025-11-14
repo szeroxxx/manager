@@ -7,13 +7,23 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --verbose
+
+# Clean install dependencies with better error handling
+RUN npm cache clean --force && \
+    rm -rf node_modules package-lock.json && \
+    npm install --verbose --legacy-peer-deps --no-optional
 
 # Copy source code
 COPY . .
 
-# Build the application with error handling
-RUN npm run build || (echo "Build failed - checking logs" && cat .next/trace && exit 1)
+# Build the application with detailed error handling
+RUN echo "Starting build process..." && \
+    npm run build || (echo "Build failed - checking directory structure:" && \
+    ls -la && \
+    echo "Checking node_modules:" && \
+    ls -la node_modules/ 2>/dev/null || echo "node_modules not found" && \
+    echo "Build error details:" && \
+    exit 1)
 
 # Production image, copy all the files and run next
 FROM node:18-alpine AS runner
