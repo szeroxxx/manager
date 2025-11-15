@@ -9,7 +9,7 @@ export const authenticate = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void | any> => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -41,9 +41,9 @@ export const authenticate = async (
       role: user.role,
     };
 
-    next();
+    return next();
   } catch (error) {
-    res.status(401).json({
+    return res.status(401).json({
       success: false,
       error: 'Invalid token.',
     });
@@ -51,7 +51,7 @@ export const authenticate = async (
 };
 
 export const authorize = (roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void | any => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -66,6 +66,6 @@ export const authorize = (roles: string[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };

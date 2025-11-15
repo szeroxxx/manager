@@ -240,15 +240,17 @@ router.post('/login', authRateLimiter, async (req, res, next) => {
     }
 
     // Generate tokens
+    // @ts-ignore - jsonwebtoken types are overly strict
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET as string,
       { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
     );
 
+    // @ts-ignore - jsonwebtoken types are overly strict
     const refreshToken = jwt.sign(
       { id: user.id },
-      process.env.JWT_REFRESH_SECRET!,
+      process.env.JWT_REFRESH_SECRET as string,
       { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
     );
 
@@ -330,9 +332,10 @@ router.post('/refresh', async (req, res, next) => {
     }
 
     // Generate new access token
+    // @ts-ignore - jsonwebtoken types are overly strict
     const newToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET as string,
       { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
     );
 

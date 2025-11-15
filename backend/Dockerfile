@@ -8,8 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies with proper error handling
-RUN npm ci --only=production && \
-    npm ci --only=dev
+RUN npm ci
 
 # Copy Prisma schema and source code
 COPY prisma ./prisma
@@ -22,8 +21,8 @@ ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
 # Generate Prisma client with error handling
 RUN npx prisma generate 2>&1 || true
 
-# Build the application with detailed error output
-RUN npm run build 2>&1 && echo "Build completed successfully" || (echo "Build failed with exit code: $?" && exit 1)
+# Build the application
+RUN npm run build
 
 # Production stage
 FROM node:18-alpine AS production
