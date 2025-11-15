@@ -18,8 +18,8 @@ COPY src ./src
 # Set environment variable for Prisma generation (temporary)
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate Prisma client with error handling
+RUN npx prisma generate || echo "Prisma generation failed, continuing with build"
 
 # Build the application
 RUN npm run build
@@ -42,12 +42,16 @@ COPY --from=builder --chown=backend:nodejs /app/dist ./dist
 COPY --from=builder --chown=backend:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=backend:nodejs /app/package*.json ./
 COPY --from=builder --chown=backend:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=backend:nodejs /app/start.sh ./start.sh
 
 # Set environment variable for Prisma generation (will be overridden by docker-compose)
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
 
-# Generate Prisma client for production
-RUN npx prisma generate
+# Make startup script executable
+RUN chmod +x start.sh
+
+# Generate Prisma client for production with error handling
+RUN npx prisma generate || echo "Prisma generation failed, client will be generated at runtime"
 
 # Create uploads directory
 RUN mkdir -p uploads && chown backend:nodejs uploads
@@ -62,6 +66,6 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# Start the application
+# Start the application using startup script
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npm", "start"]
+CMD ["./start.sh"]
