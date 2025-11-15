@@ -7,7 +7,7 @@ services:
       POSTGRES_DB: company_management
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: vps-secure-db-password-2025-company-manager
-      POSTGRES_INITDB_ARGS: "-c shared_buffers=256MB -c max_connections=100"
+      POSTGRES_INITDB_ARGS: "--shared-buffers=256MB --max-connections=100"
     ports:
       - "5432:5432"
     volumes:
