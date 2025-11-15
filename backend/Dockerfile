@@ -15,6 +15,9 @@ COPY prisma ./prisma
 COPY tsconfig.json ./
 COPY src ./src
 
+# Set environment variable for Prisma generation (temporary)
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
+
 # Generate Prisma client
 RUN npx prisma generate
 
@@ -39,6 +42,9 @@ COPY --from=builder --chown=backend:nodejs /app/dist ./dist
 COPY --from=builder --chown=backend:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=backend:nodejs /app/package*.json ./
 COPY --from=builder --chown=backend:nodejs /app/prisma ./prisma
+
+# Set environment variable for Prisma generation (will be overridden by docker-compose)
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
 
 # Generate Prisma client for production
 RUN npx prisma generate
