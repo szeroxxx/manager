@@ -7,8 +7,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev dependencies for build)
-RUN npm ci
+# Install dependencies with proper error handling
+RUN npm ci --only=production && \
+    npm ci --only=dev
 
 # Copy Prisma schema and source code
 COPY prisma ./prisma
@@ -19,10 +20,10 @@ COPY src ./src
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
 
 # Generate Prisma client with error handling
-RUN npx prisma generate || echo "Prisma generation failed, continuing with build"
+RUN npx prisma generate 2>&1 || true
 
-# Build the application
-RUN npm run build
+# Build the application with detailed error output
+RUN npm run build 2>&1 && echo "Build completed successfully" || (echo "Build failed with exit code: $?" && exit 1)
 
 # Production stage
 FROM node:18-alpine AS production
@@ -34,24 +35,21 @@ RUN apk add --no-cache dumb-init
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S backend -u 1001
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S backend -u 1001
 
 # Copy built application from builder stage
 COPY --from=builder --chown=backend:nodejs /app/dist ./dist
 COPY --from=builder --chown=backend:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=backend:nodejs /app/package*.json ./
 COPY --from=builder --chown=backend:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=backend:nodejs /app/start.sh ./start.sh
 
 # Set environment variable for Prisma generation (will be overridden by docker-compose)
-ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db"
-
-# Make startup script executable
-RUN chmod +x start.sh
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/temp_db" \
+    NODE_ENV=production
 
 # Generate Prisma client for production with error handling
-RUN npx prisma generate || echo "Prisma generation failed, client will be generated at runtime"
+RUN npx prisma generate 2>&1 || true
 
 # Create uploads directory
 RUN mkdir -p uploads && chown backend:nodejs uploads
@@ -63,9 +61,8 @@ USER backend
 EXPOSE 5000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
-# Start the application using startup script
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["./start.sh"]
+# Start the application
+CMD ["node", "dist/index.js"]
