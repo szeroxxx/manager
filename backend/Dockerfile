@@ -1,6 +1,9 @@
 # Use Node.js 18 Alpine as base image
 FROM node:18-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache openssl libc6-compat
+
 # Set working directory
 WORKDIR /app
 
