@@ -55,6 +55,7 @@ RUN mkdir -p uploads && chown backend:nodejs uploads
 
 # Copy start script
 COPY start.sh ./
+RUN sed -i 's/\r$//' start.sh
 RUN chmod +x start.sh
 
 # Switch to non-root user
