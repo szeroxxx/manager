@@ -26,7 +26,7 @@ done
 
 # Run database seeding
 echo "Running database seeding..."
-npx prisma db seed || echo "Database seeding failed, but continuing..."
+node prisma/seed.js || echo "Database seeding failed, but continuing..."
 
 # Start the application
 echo "Starting Node.js application..."
