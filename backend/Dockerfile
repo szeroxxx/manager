@@ -53,6 +53,10 @@ RUN npx prisma generate 2>&1 || true
 # Create uploads directory
 RUN mkdir -p uploads && chown backend:nodejs uploads
 
+# Copy start script
+COPY start.sh ./
+RUN chmod +x start.sh
+
 # Switch to non-root user
 USER backend
 
@@ -64,4 +68,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
 # Start the application
-CMD ["node", "dist/index.js"]
+CMD ["./start.sh"]
